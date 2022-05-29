@@ -38,34 +38,55 @@ You can obtain more training images from [Artstation-Artistic-face-HQ (AAHQ)](ht
 
 ### Training
 
-To convert a generator from one domain to another,  run the training script `ZSSGAN/scripts/dynamic.sh`:
+To convert a generator from one domain to another,  run the training script `ZSSGAN/scripts/train.sh`:
 
 ```shell
-python train.py --size 1024 
-                --batch 2 
-                --n_sample 4 
-                --output_dir /path/to/output/dir 
-                --lr 0.002 
-                --frozen_gen_ckpt /path/to/stylegan2-ffhq-config-f.pt 
-                --iter 301 
-                --source_class "photo" 
-                --target_class "sketch" 
-                --auto_layer_k 18
-                --auto_layer_iters 1 
-                --auto_layer_batch 8 
-                --output_interval 50 
-                --clip_models "ViT-B/32" "ViT-B/16" 
-                --clip_model_weights 1.0 1.0 
-                --mixing 0.0
-                --save_interval 150
+CUDA_VISIBLE_DEVICES=1 python train.py  \
+                --batch 2  --dataset "ffhq" \
+                --n_sample 4 --output_dir "output" \
+                --lr 0.002 \
+                --frozen_gen_ckpt ../weights/stylegan2-ffhq-config-f.pt \
+                --psp_path ../weights/psp_weights/e4e_ffhq_encode.pt \
+                --iter 301 \
+                --source_class "photo" \
+                --target_class "elsa.png" \
+                --source_type "mean" \
+                --auto_layer_k 18 \
+                --auto_layer_iters 0 --auto_layer_batch 8 \
+                --output_interval 50 \
+                --mixing 0.0 \
+                --save_interval 300 \
+                --clip_models  "ViT-B/32" "ViT-B/16" \
+                --psp_loss_type "dynamic" \
+                --clip_model_weights 1.0 1.0 \
+                --psp_model_weight 6 \
+                --num_keep_first 7 \
+                --psp_alpha 0.6 \
+                --lambda_direction 1.0 \
+                --lambda_partial 1 \
+                --sliding_window_size 50 \
+                --style_img_dir ../reference_images/FFHQ/elsa.png \
 ```
 
-Where you should adjust size to match the size of the pre-trained model, and the source_class and target_class descriptions control the direction of change.
-For an explenation of each argument, please consult ZSSGAN/options/train_options.py. For most modifications these default parameters should be good enough.
+Generally, just specify path to the reference image  `--style_img_dir` and its corresponding `--target_class`.
+
+Addtionally, you may use larger `--psp_alpha` to retain more attributes, larger `--psp_model_weight` to retain each attribute more heavily, larger `--lambda_partial` to acquire more representative characteristics.
+
+Note that when adapting a generator pre-trained on other source domains, you need to modify `--dataset`, path to pre-trained generator  `--frozen_gen_ckpt`, and path to inversion models `--psp_path`.
+
+More arguments and their explanation are provided in `ZSSGAN/options/train_options.py`.
 
 ### Inference
 
 To transfer real images, we first utilize [e4e](https://github.com/omertov/encoder4editing) to invert them into $W+$ latent codes, and then input the codes into the adapted generator to obtain adapted images.
 
 Specifically, just run the inference script `ZSSGAN/scripts/inference.sh`:
+
+```shell
+python inference.py  \
+                --dataset 'ffhq' \
+                --frozen_gen_ckpt path/to/adapted_generator \
+                --psp_path ../weights/psp_weights/e4e_ffhq_encode.pt \
+                --real_image_path path/to/real_image \
+```
 
