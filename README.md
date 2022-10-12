@@ -22,7 +22,7 @@ and the pytorch implementation of [StyleGAN2](https://github.com/rosinality/styl
 - Clone this repo:
 
   ```shell
-  git clone [url_of_this_repo](https://github.com/1170300521/DiFa.git)
+  git clone https://github.com/1170300521/DiFa.git
   cd DiFa
   ```
 
