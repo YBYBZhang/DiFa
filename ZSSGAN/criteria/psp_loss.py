@@ -27,7 +27,7 @@ class PSPLoss(torch.nn.Module):
 
         # Moving Average Coefficient
         self.beta = 0.02
-        self.source_mean, self.svm_source = self.get_source_mean()
+        self.source_mean = self.get_source_mean()
         self.target_mean = self.source_mean
         self.target_set = []
         self.source_set = []
@@ -45,14 +45,19 @@ class PSPLoss(torch.nn.Module):
         self.iter_sim = []
 
     def get_source_mean(self):
-        source_codes = np.zeros((1, self.n_latent, 512))
+        source_path = f"../weights/{self.model.psp_encoder}_source/{self.args.dataset}_A_mean_w.npy"
+        if os.path.exists(source_path):
+            source_codes = np.load(source_path).reshape((1, self.n_latent, 512))
+        else:
+            source_codes = np.zeros((1, self.n_latent, 512))
+            print(f"There is NO file named {source_path} !")
+
         unmasked_num = self.n_latent
         if self.args.num_keep_first > 0:
             unmasked_num = self.args.num_keep_first
             unmasked_num = max(unmasked_num, 1)
-            source_codes = source_codes.reshape((-1, self.n_latent, 512))[:, 0:unmasked_num]
-        source_codes = torch.from_numpy(source_codes).to(self.device).float().view(-1, unmasked_num*512)
-        return source_codes.mean(dim=0, keepdim=True), source_codes.cpu().numpy()
+            source_codes = source_codes.reshape((self.n_latent, 512))[0:unmasked_num]
+        return source_codes
 
     def get_target_direction(self, normalize=True):
         # delta_w_path = os.path.join(self.args.output_dir, 'w_delta.npy')
